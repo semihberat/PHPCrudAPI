@@ -1,17 +1,74 @@
+<?php
+// Veritabanı bağlantısı
+$host = 'localhost';      // Veritabanı sunucusu (XAMPP için genellikle localhost)
+$dbname = 'user_management'; // Veritabanınızın adı
+$username = 'root';       // XAMPP varsayılan kullanıcı adı
+$password = '';           // XAMPP'de varsayılan şifre (boş)
+
+try {
+    // PDO ile veritabanına bağlantı
+    $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // Kullanıcıları çekme
+    $stmt = $conn->query("SELECT * FROM users");
+    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Yeni kullanıcı ekleme
+    if (isset($_POST['action']) && $_POST['action'] == 'add') {
+        $name = $_POST['name'];
+        $email = $_POST['email'];
+        $age = $_POST['age'];
+
+        $stmt = $conn->prepare("INSERT INTO users (name, email, age) VALUES (:name, :email, :age)");
+        $stmt->execute(['name' => $name, 'email' => $email, 'age' => $age]);
+
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit();
+    }
+
+    // Kullanıcı güncelleme
+    if (isset($_POST['action']) && $_POST['action'] == 'update') {
+        $id = $_POST['id'];
+        $name = $_POST['name'];
+        $email = $_POST['email'];
+        $age = $_POST['age'];
+
+        $stmt = $conn->prepare("UPDATE users SET name = :name, email = :email, age = :age WHERE id = :id");
+        $stmt->execute(['name' => $name, 'email' => $email, 'age' => $age, 'id' => $id]);
+
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit();
+    }
+
+    // Kullanıcı silme
+    if (isset($_GET['delete'])) {
+        $id = $_GET['delete'];
+
+        $stmt = $conn->prepare("DELETE FROM users WHERE id = :id");
+        $stmt->execute(['id' => $id]);
+
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit();
+    }
+} catch (PDOException $e) {
+    echo "Bağlantı hatası: " . $e->getMessage();
+}
+?>
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kullanıcı Yönetim Sistemi</title>
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
     <div class="container py-4">
         <h1 class="text-center mb-4">Kullanıcı Yönetim Sistemi</h1>
 
-        <!-- Kullanıcı Ekleme Formu -->
+        <!-- Yeni Kullanıcı Ekleme Formu -->
         <div class="card mb-4">
             <div class="card-header">Yeni Kullanıcı Ekle</div>
             <div class="card-body">
